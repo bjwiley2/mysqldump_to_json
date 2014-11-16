@@ -58,6 +58,10 @@ var Converter = (function () {
           var fieldName = parts[1];
           var fieldType = parts[2].split(' ')[1];
 
+          if(fieldName === 'id') {
+            fieldName = '_id';
+          }
+
           fields.push({
             name: fieldName,
             type: fieldType
@@ -130,7 +134,7 @@ var Converter = (function () {
   return {
     init: function () {
       if(process.argv.length != 3) {
-        reportError('Please specify exactly one mysqldump input file');
+        reportError(':-)Please specify exactly one mysqldump input file');
       }
 
       _fs = require('fs');
@@ -142,7 +146,10 @@ var Converter = (function () {
         readTableValues();
       }
 
-      _fs.writeFileSync('output.json', JSON.stringify(_collections, undefined, 2));
+      for(var i = 0; i < _collections.length; i++) {
+        _fs.writeFileSync(_collections[i].name + '.json', JSON.stringify(_collections[i].values, undefined, 2));
+      }
+
       process.exit();
     }
   };
