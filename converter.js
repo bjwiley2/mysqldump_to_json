@@ -60,6 +60,7 @@ var Converter = (function () {
 
           if(fieldName === 'id') {
             fieldName = '_id';
+            fieldType = 'text';
           }
 
           fields.push({
