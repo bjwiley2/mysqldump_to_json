@@ -14,6 +14,10 @@ var Converter = (function () {
     return _fileLines.shift().trim();
   };
 
+  var setNextLine = function (line) {
+    return _fileLines.unshift(line);
+  };
+
   var hasMoreLines = function () {
     return _fileLines.length > 0;
   };
@@ -28,11 +32,22 @@ var Converter = (function () {
   };
 
   var convertData = function (data, type) {
-    if(startsWith(type, 'varchar') || startsWith(type, 'text') || startsWith(type, 'date')) {
-      return data;
+    if(startsWith(type, 'varchar') || startsWith(type, 'text')) {
+      return data.trim();
     }
-    else if(startsWith(type, 'int') || startsWith(type, 'decimal')) {
+    else if(startsWith(type, 'int') || startsWith(type, 'decimal') || startsWith(type, 'double')) {
       return Number(data);
+    }
+    else if(startsWith(type, 'timestamp') || startsWith(type, 'date') || startsWith(type, 'datetime')) {
+			if ( data.toLowerCase() == 'null' ) {
+				return null;
+			}
+			
+			if ( !isNaN(Number(data)) ){
+				data = Number(data);
+			}
+			
+      return (new Date(data)).getTime();
     }
     else if(startsWith(type, 'tinyint')) {
       return data == 1;
@@ -73,7 +88,8 @@ var Converter = (function () {
 
         _collections.push({
           name: tableName,
-          fields: fields
+          fields: fields,
+					values: []
         });
 
         return;
@@ -85,9 +101,15 @@ var Converter = (function () {
     var currentCollection = _collections[_collections.length - 1];
     var tableName = currentCollection.name;
     var fields = currentCollection.fields;
+    var values = currentCollection.values;
 
     while(hasMoreLines()) {
       var currentLine = getNextLine();
+			
+      if(startsWith(currentLine, 'CREATE TABLE')) {
+				setNextLine(currentLine);
+				return;
+			}
 
       if(startsWith(currentLine, 'INSERT INTO')) {
         currentLine = currentLine.replace('INSERT INTO `' + tableName + '` VALUES ', '');
@@ -95,7 +117,6 @@ var Converter = (function () {
         var valueId = 0
         var insideString = false;
         var currentValue = '';
-        var values = [];
         var pair = {};
 
         while(index < currentLine.length) {
@@ -125,9 +146,6 @@ var Converter = (function () {
 
           index++;
         }
-
-        _collections[_collections.length - 1].values = values;
-        return;
       }
     }
   };
